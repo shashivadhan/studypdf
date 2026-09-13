@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyPDF — PDF Viewer & Annotator</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">📖</span><span>StudyPDF</span></div>
+    <div class="header-actions">
+      <span id="saveStatus" class="status">Ready</span>
+      <button id="uploadTop" class="primary">＋ Upload PDF</button>
+      <input id="fileInput" type="file" accept="application/pdf" hidden />
+    </div>
+  </header>
+
+  <main class="app">
+    <section class="toolbar card">
+      <div class="file-info">
+        <strong id="fileName">No PDF opened</strong>
+        <small id="fileMeta">Choose a PDF to begin</small>
+      </div>
+      <div class="page-controls">
+        <button id="prevPage" disabled>‹</button>
+        <input id="pageNumber" type="number" min="1" value="1" disabled />
+        <span>/ <span id="pageCount">—</span></span>
+        <button id="nextPage" disabled>›</button>
+        <button id="zoomOut" disabled>−</button>
+        <span id="zoomLabel">100%</span>
+        <button id="zoomIn" disabled>＋</button>
+        <button id="fitPage" disabled>Fit</button>
+      </div>
+    </section>
+
+    <section class="toolbar card annotation-toolbar">
+      <div class="tools">
+        <button class="tool active" data-tool="select" title="Select">✋</button>
+        <button class="tool" data-tool="highlight" title="Highlight area">🖍️</button>
+        <button class="tool" data-tool="pen" title="Pen">✎</button>
+        <button class="tool" data-tool="eraser" title="Eraser">⌫</button>
+        <button class="tool" data-tool="note" title="Add note at click">📝</button>
+      </div>
+      <div class="colors">
+        <span>Color</span>
+        <button class="color active" data-color="#ffe34d" style="background:#ffe34d"></button>
+        <button class="color" data-color="#86efac" style="background:#86efac"></button>
+        <button class="color" data-color="#93c5fd" style="background:#93c5fd"></button>
+        <button class="color" data-color="#f9a8d4" style="background:#f9a8d4"></button>
+        <label>Size <select id="penSize"><option value="2">2px</option><option value="4" selected>4px</option><option value="7">7px</option><option value="12">12px</option></select></label>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="viewer card">
+        <div id="emptyState" class="empty">
+          <div class="empty-icon">📄</div>
+          <h2>Open your first PDF</h2>
+          <p>Upload lecture notes, textbooks, or GATE PDFs. Highlight, write, and add revision notes.</p>
+          <button id="emptyUpload" class="primary">Upload PDF</button>
+          <small>PDF files only · Runs locally in your browser</small>
+        </div>
+        <div id="viewerContent" hidden>
+          <div id="paperArea" class="paper-area">
+            <div id="pageStage">
+              <canvas id="pdfCanvas"></canvas>
+              <div id="highlightLayer"></div>
+              <canvas id="inkCanvas"></canvas>
+              <div id="noteLayer"></div>
+            </div>
+          </div>
+          <div class="viewer-footer">
+            <span id="toolHint">Select a tool to annotate.</span>
+            <button id="clearPage">Clear page annotations</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="sidebar">
+        <div class="card panel">
+          <h3>📝 Notes</h3>
+          <p class="muted">Add a text note to the current page.</p>
+          <textarea id="noteText" placeholder="Write your important concept..."></textarea>
+          <button id="addNote" class="primary full" disabled>＋ Add note</button>
+          <div id="notesList" class="notes-list"><p class="muted">Your notes will appear here.</p></div>
+        </div>
+        <div class="card panel">
+          <h3>💾 Export</h3>
+          <p class="muted">Export the original PDF and your annotations.</p>
+          <button id="downloadPdf" class="primary full" disabled>↓ Download PDF</button>
+          <button id="downloadAnnotations" class="full" disabled>↓ Export annotations</button>
+        </div>
+        <div class="card panel">
+          <h3>☁️ Local workspace</h3>
+          <p class="muted">This version saves annotations in memory while open. Cloud login and sync can be added later.</p>
+        </div>
+      </aside>
+    </section>
+    <p id="errorBox" class="error" role="alert"></p>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
