@@ -20,7 +20,89 @@ function renderStrokes(){const c=$("inkCanvas"),ctx=c.getContext("2d");ctx.clear
 function renderNotes(){const layer=$("noteLayer");layer.innerHTML="";state.notes.forEach(n=>{const b=document.createElement("button");b.className="note-pin";b.textContent="N";b.title=n.text;b.style.left=n.x*100+"%";b.style.top=n.y*100+"%";b.onclick=()=>{$("noteText").value=n.text;$("noteText").focus()};layer.append(b)});const list=$("notesList");list.innerHTML="";if(!state.notes.length){list.innerHTML='<p class="muted">No notes on this page.</p>';return}state.notes.forEach((n,i)=>{const d=document.createElement("div");d.className="note-item";d.innerHTML=`<small>Page ${state.page}</small><div></div><button>Delete</button>`;d.querySelector("div").textContent=n.text;d.querySelector("button").onclick=()=>{state.notes.splice(i,1);savePage();renderNotes()};list.append(d)})}
 function overlays(){renderHighlights();renderStrokes();renderNotes()}
 async function renderPage(){if(!state.pdf)return;syncPage();if(renderTask)try{renderTask.cancel()}catch{}const p=await state.pdf.getPage(state.page);const v=p.getViewport({scale:state.scale});$("pageStage").style.width=v.width+"px";$("pageStage").style.height=v.height+"px";$("pdfCanvas").width=v.width;$("pdfCanvas").height=v.height;$("inkCanvas").width=v.width;$("inkCanvas").height=v.height;renderTask=p.render({canvasContext:$("pdfCanvas").getContext("2d"),viewport:v});try{await renderTask.promise}catch(e){if(e.name!=="RenderingCancelledException")error(e.message)}overlays();nav()}
-async function openFile(file){if(!file)return;if(file.type!=="application/pdf"&&!file.name.toLowerCase().endsWith(".pdf"))return error("Please choose a PDF file.");try{setStatus("Opening PDF…");const buf=await file.arrayBuffer();state.pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;state.file=file;state.original=new Uint8Array(buf);state.page=1;state.scale=1;state.annotations={};$("fileName").textContent=file.name;$("fileMeta").textContent=Math.round(file.size/1024)+" KB · "+state.pdf.numPages+" pages";$("emptyState").hidden=true;$("viewerContent").hidden=false;enable(true);await renderPage();setStatus("PDF ready")}catch(e){error("Could not open PDF: "+e.message);setStatus("Error")}}
+async function openFile(file) {
+
+  if (!file) return;
+
+  if (
+    file.type !== "application/pdf" &&
+    !file.name.toLowerCase().endsWith(".pdf")
+  ) {
+    return error("Please choose a PDF file.");
+  }
+
+  try {
+
+    setStatus("Opening PDF…");
+    error("");
+
+    // Read the PDF file
+    const buf = await file.arrayBuffer();
+
+    /*
+      IMPORTANT FIX
+
+      Create two independent copies.
+
+      Copy 1 = Original PDF for downloading
+      Copy 2 = PDF.js viewer
+
+      PDF.js may detach the buffer given to it.
+    */
+
+    const originalCopy = new Uint8Array(buf.slice(0));
+
+    const pdfCopy = new Uint8Array(buf.slice(0));
+
+    // Load PDF using its own independent copy
+    state.pdf = await pdfjsLib.getDocument({
+      data: pdfCopy
+    }).promise;
+
+    // Store file information
+    state.file = file;
+
+    // Keep safe copy for download
+    state.original = originalCopy;
+
+    // Reset viewer
+    state.page = 1;
+    state.scale = 1;
+    state.annotations = {};
+
+    // Update UI
+    $("fileName").textContent = file.name;
+
+    $("fileMeta").textContent =
+      Math.round(file.size / 1024) +
+      " KB · " +
+      state.pdf.numPages +
+      " pages";
+
+    $("emptyState").hidden = true;
+
+    $("viewerContent").hidden = false;
+
+    enable(true);
+
+    // Render first page
+    await renderPage();
+
+    setStatus("PDF ready");
+
+  } catch (e) {
+
+    console.error("PDF loading error:", e);
+
+    error(
+      "Could not open PDF: " + e.message
+    );
+
+    setStatus("Error");
+
+  }
+
+}
 function hit(p,s){return s.points.some(q=>Math.hypot((q[0]-p[0])*$("inkCanvas").width,(q[1]-p[1])*$("inkCanvas").height)<Math.max(12,s.size*state.scale+8))}
 function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 document.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>tool(b.dataset.tool));
